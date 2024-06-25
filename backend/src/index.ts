@@ -88,6 +88,8 @@ app.get(
       )
       .slice(0, 5);
 
+    // console.log(commentsList);
+
     let sentiment = "";
     let accumSentiment = "";
 
@@ -113,6 +115,7 @@ app.get(
     //   }
     // }
     // return c.json({ sentiment });
+    console.log(resp.response);
     return c.json({ response: resp.response });
   }
 );
