@@ -56,6 +56,7 @@ app.use("/*", cors());
 //   return c.json({ message: response }, 201);
 
 const isValidUrl = (value: string) => {
+  if (!value.startsWith("https://news.ycombinator.com")) return false;
   try {
     new URL(value);
     return true;
@@ -81,13 +82,38 @@ app.get(
       return c.text("No comments found");
     }
 
-    const commentAstext = comments.map((comment) =>
-      comment.replace(/<div class="commtext c00">|<\/div>/g, "")
-    );
+    const commentsList = comments
+      .map((comment) =>
+        comment.replace(/<div class="commtext c00">|<\/div>/g, "")
+      )
+      .slice(0, 5);
 
-    // return c.text(await response.text());
-    // return c.text(comments.join("\n"));
-    return c.json({ comments: commentAstext });
+    let sentiment = "";
+    let accumSentiment = "";
+
+    const resp = (await c.env.AI.run("@cf/mistral/mistral-7b-instruct-v0.1", {
+      prompt: `summarize this set of comments on hacker news(a website where programmers basically share their learning and what they are building), to basically give an overview of what the users think about the post: ${commentsList.join(
+        "\n"
+      )} `,
+    })) as { response: string };
+    // for (let i = 0; i < commentsList.length; i++) {
+    //   if (i % 10) {
+    //     console.log("Sentences:", accumSentiment);
+
+    //     const resp = (await c.env.AI.run(
+    //       "@cf/mistral/mistral-7b-instruct-v0.1",
+    //       {
+    //         prompt: `summarize this set of comments: ${accumSentiment}, but also, include this context when you do the summarization: ${sentiment}. be consise in your responses`,
+    //       }
+    //     )) as { response: string };
+    //     accumSentiment = "";
+    //     sentiment += resp.response;
+    //   } else {
+    //     accumSentiment += "\nNew comment " + commentsList[i];
+    //   }
+    // }
+    // return c.json({ sentiment });
+    return c.json({ response: resp.response });
   }
 );
 export default app;
